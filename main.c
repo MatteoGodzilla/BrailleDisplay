@@ -1,6 +1,7 @@
 #include <locale.h>
 #include <ncurses.h>
 #include "display.h" 
+#include "utils.h"
 
 void adjustDisplay(BrailleDisplay* display){
     int displayRows = subRowsToChar(display->subRows);
@@ -23,6 +24,57 @@ void render(BrailleDisplay* display){
         }
     }
     */
+
+    float centerReal = -0.7;
+    float centerImaginary = 0;
+
+    float height = 1;//imaginary units
+    float width = (float)display->subCols / (float)display->subRows * height;
+
+    pixel centerX = display->subCols / 2;
+    pixel centerY = display->subRows / 2;
+
+    for(pixel y = 0; y < display->subRows; y++){
+        for(pixel x = 0; x < display->subCols; x++){
+            float dx = x - centerX;
+            float dy = y - centerY;
+            float cReal = centerReal + (dx / centerX) * width;
+            float cImag = centerImaginary + (dy / centerY) * height;
+            float zReal = 0;
+            float zImag = 0;
+
+            for(int iteration = 0; iteration < 20; iteration++){
+                float tmpReal = zReal;
+                zReal = zReal * zReal - zImag * zImag;
+                zImag = 2 * tmpReal * zImag; 
+                zReal += cReal;
+                zImag += cImag;
+            }
+
+            if(zReal * zReal + zImag * zImag < 2){
+                setPixel(display, y, x, true);
+            } else {
+                setPixel(display, y, x, false);
+            }
+        }
+    }
+
+    /*
+    pixel centerRow = display->subRows / 2;
+    pixel centerCol = display->subCols / 2;
+
+    pixel radius = imin(centerRow, centerCol) ;
+    float angleDelta = M_PI_4 / 4;
+
+    for(float alpha = 0; alpha < 2 * M_PI; alpha += angleDelta){
+        pixel x = centerCol + radius * cos(alpha);
+        pixel y = centerRow + radius * sin(alpha);
+        drawLine(display, centerRow, centerCol, y, x);
+    }
+    */
+    
+
+    /*
     for(pixel y = display->subRows / 4; y <= display->subRows * 3 / 4; y++){
         setPixel(display,y,display->subCols/4,true);
         setPixel(display,y,display->subCols*3/4,true);
@@ -38,6 +90,7 @@ void render(BrailleDisplay* display){
             setPixel(display,y,x,rand()%2);
         }
     }
+    */
 }
 
 int main(){
@@ -56,7 +109,7 @@ int main(){
         clear();
         adjustDisplay(display);
         render(display);
-        mvprintw(0,0,"Press q to quit");
+        mvprintw(0,0,"Press q to quit (%dx%d)", display->subRows, display->subCols);
         int characterRows = subRowsToChar(display->subRows);
         int characterCols = subColumnsToChar(display->subCols);
         //show pixels to final display

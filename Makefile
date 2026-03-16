@@ -1,2 +1,2 @@
-main: main.c display.c
-	gcc -g main.c display.c -o main -lncursesw -lm
+main: main.c display.c utils.c
+	gcc -g main.c display.c utils.c -o main -lncursesw -lm

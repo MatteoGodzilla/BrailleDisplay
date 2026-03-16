@@ -69,6 +69,85 @@ bool getPixel(BrailleDisplay* display, pixel subY, pixel subX){
     return display->buffer[bufferIndex] & bit;
 }
 
+void drawLine(BrailleDisplay* display, pixel startSubY, pixel startSubX, pixel endSubY, pixel endSubX){
+    pixel dy = endSubY - startSubY;
+    pixel dx = endSubX - startSubX;
+
+    if(dx == 0){
+        //vertical line
+        pixel s = imin(startSubY, endSubY);
+        pixel e = imax(startSubY, endSubY);
+        for(pixel y = s; y < e; y++){
+            setPixel(display,y,startSubX, true);
+        }
+    } else if (dy == 0){
+        //horizontal line
+        pixel s = imin(startSubX, endSubX);
+        pixel e = imax(startSubX, endSubX);
+        for(pixel x = s; x < e; x++){
+            setPixel(display,startSubY,x, true);
+        }
+    } else if (abs(dy) > abs(dx)){
+        //more vertical than horizontal
+        //we always draw from A to B
+        pixel x = startSubX;
+        pixel aY = startSubY;
+        pixel bY = endSubY;
+
+        if(endSubY < startSubY){
+            x = endSubX;
+            aY = endSubY;
+            bY = startSubY;
+        }
+
+        float dXdY = (float)dx / (float)dy; //by definition < 1
+        float remainder = 0;
+
+        for(pixel y = aY; y <= bY; y++){
+            setPixel(display, y, x, true);
+            remainder += dXdY;
+            if(dXdY < 0 && remainder < -1){
+                //x should go to the left one pixel
+                x--;
+                remainder += 1;
+            } else if(dXdY > 0 && remainder > 1){
+                //x should go to the right one pixel
+                x++;
+                remainder -= 1;
+            }
+        }
+    } else {
+        //more horizontal than vertical
+        //we always draw from A to B
+        pixel y = startSubY;
+        pixel aX = startSubX;
+        pixel bX = endSubX;
+
+        if(endSubX < startSubX){
+            y = endSubY;
+            aX = endSubX;
+            bX = startSubX;
+        }
+
+        float dYdX = (float)dy / (float)dx; //by definition < 1
+        float remainder = 0;
+
+        for(pixel x = aX; x <= bX; x++){
+            setPixel(display, y, x, true);
+            remainder += dYdX;
+            if(dYdX < 0 && remainder < -1){
+                //y should go to the left one pixel
+                y--;
+                remainder += 1;
+            } else if(dYdX > 0 && remainder > 1){
+                //x should go to the right one pixel
+                y++;
+                remainder -= 1;
+            }
+        }
+    }
+}
+
 wchar_t getCharacter(BrailleDisplay* display, int row, int col){
     if(!display) return 0;
     int characterCols = subColumnsToChar(display->subCols);
